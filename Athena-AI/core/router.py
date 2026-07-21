@@ -17,11 +17,26 @@ def handle_open_app(app_name):
     return f"Opening {app_name}. (App-opening not wired up yet — this is a placeholder.)"
 
 
+import psutil
+
 def handle_system_status():
     """
-    Placeholder for now — Phase 1 doc calls for psutil here.
+    Reads real CPU, RAM, and battery info using psutil and
+    formats it into a sentence natural to speak out loud.
     """
-    return "System status check is not wired up yet. Coming in the next step."
+    cpu_percent = psutil.cpu_percent(interval=1)
+    ram = psutil.virtual_memory()
+    ram_percent = ram.percent
+
+    response = f"CPU usage is at {cpu_percent} percent, and RAM usage is at {ram_percent} percent."
+
+    battery = psutil.sensors_battery()
+    if battery is not None:
+        battery_percent = round(battery.percent)
+        charging_status = "charging" if battery.power_plugged else "not charging"
+        response += f" Battery is at {battery_percent} percent and {charging_status}."
+
+    return response
 
 
 def handle_web_search(query):
