@@ -74,5 +74,7 @@ Development Tools:
 GitHub
 VS Code
 
+## ⭐ Support
 
+If you found this project useful, consider giving it a ⭐ on GitHub.
 
