@@ -10,6 +10,7 @@ from core.command_parser import parse_command
 from core.plugin_loader import load_plugins
 from ai.llm import ask_llm
 from core.memory import ConversationMemory
+from services.weather import get_weather
 
 import subprocess
 import psutil
@@ -65,6 +66,10 @@ def handle_web_search(query):
     return f"Searching the web for {query}."
 
 
+def handle_weather(city):
+    return get_weather(city)
+
+
 def route_command(command_name, extra_data):
     """
     Takes the parsed command and dispatches to the right handler.
@@ -76,6 +81,8 @@ def route_command(command_name, extra_data):
         return handle_system_status()
     elif command_name == "web_search":
         return handle_web_search(extra_data)
+    elif command_name == "weather":
+        return handle_weather(extra_data)
     elif command_name == "exit":
         return "__EXIT__"  # special signal, handled in the main loop below
     elif command_name in plugin_commands:

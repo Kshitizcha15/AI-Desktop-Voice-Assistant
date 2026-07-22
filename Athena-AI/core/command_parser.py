@@ -34,6 +34,18 @@ def parse_command(text):
     if "calculate" in text or "plus" in text or "minus" in text or "times" in text:
         return ("calculate", text)
 
+    # --- Weather ---
+    if "weather" in text:
+        # crude extraction: whatever comes after "weather in/for/of", or bare "weather"
+        for keyword in ["weather in", "weather for", "weather of", "weather"]:
+            if keyword in text:
+                city = text.split(keyword, 1)[1].strip()
+                # strip any leftover leading preposition the keyword match missed
+                for leftover in ["in ", "for ", "of "]:
+                    if city.startswith(leftover):
+                        city = city[len(leftover):].strip()
+                return ("weather", city)
+
     # --- Exit ---
     if "exit" in text or "quit" in text or "goodbye" in text:
         return ("exit", None)
@@ -50,6 +62,8 @@ if __name__ == "__main__":
         "search for python tutorials",
         "google best pizza recipe",
         "calculate 5 plus 3",
+        "weather of London",
+        "weather in Mumbai",
         "goodbye",
         "asdkjfh nonsense",
     ]
