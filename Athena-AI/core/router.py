@@ -2,22 +2,36 @@ import sys
 import os
 
 # Add the project root to the path so we can import from speech/ and core/
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from speech.text_to_speech import speak
 from speech.speech_to_text import listen
 from core.command_parser import parse_command
+from core.plugin_loader import load_plugins
+from ai.llm import ask_llm
+from core.memory import ConversationMemory
+
+import subprocess
+import psutil
+import webbrowser
+
+memory = ConversationMemory()
+
+plugin_commands = {}
+load_plugins(plugin_commands)
 
 
 def handle_open_app(app_name):
     """
-    Placeholder for now — Phase 1 doc calls for pyautogui/subprocess here.
-    Keeping this simple until we wire in the real automation module.
+    Opens a macOS application by name using the 'open' command.
+    Works for anything in /Applications — Chrome, Calculator, VS Code, etc.
     """
-    return f"Opening {app_name}. (App-opening not wired up yet — this is a placeholder.)"
+    try:
+        subprocess.run(["open", "-a", app_name], check=True)
+        return f"Opening {app_name}."
+    except subprocess.CalledProcessError:
+        return f"I couldn't find an app called {app_name}. Please check the name and try again."
 
-
-import psutil
 
 def handle_system_status():
     """
@@ -41,9 +55,14 @@ def handle_system_status():
 
 def handle_web_search(query):
     """
-    Placeholder for now — Phase 1 doc calls for webbrowser here.
+    Opens the default web browser with a Google search for the given query.
     """
-    return f"Searching the web for {query}. (Web search not wired up yet — this is a placeholder.)"
+    if not query:
+        return "I didn't catch what you wanted to search for."
+
+    search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
+    webbrowser.open(search_url)
+    return f"Searching the web for {query}."
 
 
 def route_command(command_name, extra_data):
@@ -59,8 +78,15 @@ def route_command(command_name, extra_data):
         return handle_web_search(extra_data)
     elif command_name == "exit":
         return "__EXIT__"  # special signal, handled in the main loop below
+    elif command_name in plugin_commands:
+        return plugin_commands[command_name](extra_data)
     else:
-        return "Sorry, I didn't understand that command."
+        # "unknown" commands fall through to the LLM —
+        # extra_data holds the original spoken text in this case
+        reply = ask_llm(extra_data, memory.get())
+        memory.add("user", extra_data)
+        memory.add("assistant", reply)
+        return reply
 
 
 def run_assistant():

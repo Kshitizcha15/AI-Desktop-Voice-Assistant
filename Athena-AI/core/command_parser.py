@@ -30,6 +30,10 @@ def parse_command(text):
                 query = text.split(keyword, 1)[1].strip()
                 return ("web_search", query)
 
+    # --- Calculator ---
+    if "calculate" in text or "plus" in text or "minus" in text or "times" in text:
+        return ("calculate", text)
+
     # --- Exit ---
     if "exit" in text or "quit" in text or "goodbye" in text:
         return ("exit", None)
@@ -45,6 +49,7 @@ if __name__ == "__main__":
         "what's my cpu usage",
         "search for python tutorials",
         "google best pizza recipe",
+        "calculate 5 plus 3",
         "goodbye",
         "asdkjfh nonsense",
     ]
