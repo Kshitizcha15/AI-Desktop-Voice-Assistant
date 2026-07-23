@@ -36,9 +36,9 @@ class FridayApp:
         header = tk.Frame(self.root, bg=self.BACKGROUND)
         header.pack(fill="x", padx=30, pady=(25, 14))
         tk.Label(header, text="FRIDAY", font=("Helvetica", 26, "bold"), fg=self.ACCENT,
-                 bg=self.BACKGROUND).pack(side="left")
+                bg=self.BACKGROUND).pack(side="left")
         tk.Label(header, text="● ONLINE", font=("Helvetica", 11, "bold"), fg=self.SUCCESS,
-                 bg=self.BACKGROUND).pack(side="right", pady=10)
+                bg=self.BACKGROUND).pack(side="right", pady=10)
 
     def _build_conversation(self):
         panel = tk.Frame(self.root, bg=self.PANEL, highlightthickness=1, highlightbackground="#263354")
@@ -73,7 +73,7 @@ class FridayApp:
         footer = tk.Frame(self.root, bg=self.BACKGROUND)
         footer.pack(fill="x", padx=30, pady=(0, 22))
         tk.Label(footer, textvariable=self.status, bg=self.BACKGROUND, fg=self.MUTED,
-                 font=("Helvetica", 11)).pack(side="left")
+                font=("Helvetica", 11)).pack(side="left")
         self.start_button = tk.Button(
             footer, text="Start voice mode", command=self.start_voice, bg=self.SUCCESS,
             fg="#071a13", font=("Helvetica", 11, "bold"), relief="flat", padx=14, pady=7,
