@@ -2,17 +2,26 @@ import speech_recognition as sr
 
 recognizer = sr.Recognizer()
 
-def listen():
+
+def listen(timeout=5, phrase_time_limit=8, calibrate=False):
     """
     Listens to the microphone once, converts speech to text, and returns it.
     Returns None if nothing was understood (silence, unclear audio, etc.)
     so callers can handle that case instead of crashing.
     """
     with sr.Microphone() as source:
-        print("[Listening] Adjusting for ambient noise...")
-        recognizer.adjust_for_ambient_noise(source, duration=3)
+        if calibrate:
+            print("[Listening] Adjusting for ambient noise...")
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
         print("[Listening] Speak now...")
-        audio = recognizer.listen(source)
+        try:
+            audio = recognizer.listen(
+                source,
+                timeout=timeout,
+                phrase_time_limit=phrase_time_limit,
+            )
+        except sr.WaitTimeoutError:
+            return None
 
     try:
         text = recognizer.recognize_google(audio)
