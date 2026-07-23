@@ -47,7 +47,13 @@ def parse_command(text):
                 return ("weather", city)
 
     # --- Exit ---
-    if "exit" in text or "quit" in text or "goodbye" in text:
+    if (
+        "exit" in text
+        or "quit" in text
+        or "goodbye" in text
+        or "stop listening" in text
+        or "go to sleep" in text
+    ):
         return ("exit", None)
 
     # --- Nothing matched ---

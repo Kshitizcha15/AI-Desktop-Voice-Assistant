@@ -11,6 +11,7 @@ from core.plugin_loader import load_plugins
 from ai.llm import ask_llm
 from core.memory import ConversationMemory
 from services.weather import get_weather
+from services.ollama_manager import ensure_ollama_running
 
 import subprocess
 import psutil
@@ -96,27 +97,82 @@ def route_command(command_name, extra_data):
         return reply
 
 
-def run_assistant():
-    """
-    The main loop: listen -> parse -> route -> speak. Repeats until exit.
-    """
-    speak("Assistant is ready. What would you like me to do?")
+WAKE_PHRASE = "hello friday"
 
-    while True:
-        heard_text = listen()
+
+def _stop_requested(stop_event):
+    return stop_event is not None and stop_event.is_set()
+
+
+def _publish(message_callback, speaker, message):
+    if message_callback:
+        message_callback(speaker, str(message))
+
+
+def _reply_to_command(heard_text, message_callback=None, speak_response=True):
+    """Route one spoken command and speak its response."""
+    _publish(message_callback, "You", heard_text)
+    command_name, extra_data = parse_command(heard_text)
+    response = route_command(command_name, extra_data)
+
+    if response == "__EXIT__":
+        response = "Going back to sleep. Say hello Friday when you need me."
+        _publish(message_callback, "Friday", response)
+        if speak_response:
+            speak(response)
+        return False
+
+    _publish(message_callback, "Friday", response)
+    if speak_response:
+        speak(response)
+    return True
+
+
+def process_command(command, status_callback=None, message_callback=None):
+    """Run one typed command from the desktop interface."""
+    ensure_ollama_running(status_callback=status_callback)
+    # Typed requests stay in the visual chat interface. Voice mode speaks replies.
+    return _reply_to_command(command, message_callback=message_callback, speak_response=False)
+
+
+def run_assistant(stop_event=None, status_callback=None, message_callback=None):
+    """
+    Waits for the wake phrase, then handles commands until asked to sleep.
+    It keeps running until the desktop app's Stop button is pressed.
+    """
+    ensure_ollama_running(status_callback=status_callback)
+    speak("Friday is ready. Say hello Friday to wake me.")
+
+    while not _stop_requested(stop_event):
+        # Idle mode: ignore everything except the wake phrase.
+        heard_text = listen(timeout=3, phrase_time_limit=5, calibrate=False)
 
         if heard_text is None:
-            speak("I didn't catch that. Could you try again?")
             continue
 
-        command_name, extra_data = parse_command(heard_text)
-        response = route_command(command_name, extra_data)
+        normalized_text = heard_text.lower().strip()
+        if WAKE_PHRASE not in normalized_text:
+            continue
 
-        if response == "__EXIT__":
-            speak("Goodbye!")
-            break
+        # A command can follow the wake phrase, e.g. "Hello Friday, weather in Mumbai".
+        command_after_wake = normalized_text.split(WAKE_PHRASE, 1)[1].strip(" ,.!?")
+        if command_after_wake:
+            speak("Yes?")
+            if not _reply_to_command(command_after_wake, message_callback):
+                continue
+        else:
+            speak("Yes? How can I help?")
 
-        speak(response)
+        # Active mode: answer commands until the user asks Friday to sleep.
+        while not _stop_requested(stop_event):
+            command_text = listen(timeout=5, phrase_time_limit=12, calibrate=False)
+            if command_text is None:
+                continue
+
+            if not _reply_to_command(command_text, message_callback):
+                break
+
+    speak("Friday has stopped.")
 
 
 if __name__ == "__main__":
